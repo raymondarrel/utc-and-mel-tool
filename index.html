@@ -155,13 +155,13 @@
 
     select, input[type=number] {
       width: 100%;
-      padding: 6px 8px;
+      padding: 10px 12px;
       border-radius: 10px;
       border: 1px solid var(--input-border);
       background: var(--panel-strong);
       color: var(--text);
       font-family: inherit;
-      font-size: 12px;
+      font-size: 14px;
     }
 
     input[type=range] {
@@ -181,8 +181,8 @@
       background: var(--panel-strong);
       color: var(--text);
       border-radius: 10px;
-      padding: 6px 10px;
-      font-size: 12px;
+      padding: 10px 12px;
+      font-size: 14px;
       cursor: pointer;
     }
 
@@ -244,6 +244,47 @@
     .toolbar-group {
       display: grid;
       gap: 6px;
+    }
+
+    @media (max-width: 900px) {
+      body {
+        place-items: start stretch;
+      }
+
+      .frame {
+        width: 100%;
+        padding: 16px;
+      }
+
+      .workspace {
+        min-height: auto;
+        resize: none;
+      }
+
+      .panel {
+        position: static;
+        width: 100%;
+        height: auto;
+        min-width: 0;
+        resize: none;
+        margin-bottom: 12px;
+      }
+
+      .toolbar {
+        max-width: none;
+      }
+
+      select,
+      input[type=number],
+      .btn {
+        font-size: 16px;
+        padding: 12px 14px;
+        min-height: 44px;
+      }
+
+      input[type=range] {
+        min-height: 36px;
+      }
     }
   </style>
 </head>
