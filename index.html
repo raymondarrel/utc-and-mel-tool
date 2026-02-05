@@ -153,6 +153,24 @@
       align-items: center;
     }
 
+    .tz-remove {
+      display: none;
+      border: 1px solid var(--input-border);
+      background: var(--panel-strong);
+      color: var(--text);
+      border-radius: 10px;
+      padding: 8px 10px;
+      font-size: 12px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .tz-line.selected + .tz-remove {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
     select, input[type=number] {
       width: 100%;
       padding: 10px 12px;
@@ -274,6 +292,18 @@
         max-width: none;
       }
 
+      .tz-row {
+        grid-template-columns: 1fr auto;
+        align-items: center;
+      }
+
+      .tz-remove {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 40px;
+      }
+
       select,
       input[type=number],
       .btn {
@@ -300,14 +330,17 @@
         <div class="tz-row hidden" id="extra-row-1">
           <select class="tz-select" data-slot="1"></select>
           <div class="line tz-line tz-primary" id="tz1" data-slot="1" tabindex="0"></div>
+          <button class="tz-remove" type="button" data-slot="1">Remove</button>
         </div>
         <div class="tz-row hidden" id="extra-row-2">
           <select class="tz-select" data-slot="2"></select>
           <div class="line tz-line tz-primary" id="tz2" data-slot="2" tabindex="0"></div>
+          <button class="tz-remove" type="button" data-slot="2">Remove</button>
         </div>
         <div class="tz-row hidden" id="extra-row-3">
           <select class="tz-select" data-slot="3"></select>
           <div class="line tz-line tz-primary" id="tz3" data-slot="3" tabindex="0"></div>
+          <button class="tz-remove" type="button" data-slot="3">Remove</button>
         </div>
 
         <div class="button-row">
@@ -383,6 +416,7 @@
     const dayOffsetInput = document.getElementById("dayOffset");
     const tzSelects = Array.from(document.querySelectorAll(".tz-select"));
     const addTzButton = document.getElementById("addTz");
+    const removeButtons = Array.from(document.querySelectorAll(".tz-remove"));
     const extraRows = [
       document.getElementById("extra-row-1"),
       document.getElementById("extra-row-2"),
@@ -714,6 +748,29 @@
       activeLine.classList.remove("selected");
       activeLine = null;
       updateTimes();
+    });
+
+    removeButtons.forEach(button => {
+      button.addEventListener("click", () => {
+        const slot = parseInt(button.dataset.slot, 10);
+        if (!slot) return;
+        const row = document.getElementById(`extra-row-${slot}`);
+        const select = document.querySelector(`.tz-select[data-slot="${slot}"]`);
+        const line = document.getElementById(`tz${slot}`);
+        if (select) select.value = "";
+        if (select) select.classList.remove("hidden");
+        if (line) {
+          line.textContent = "";
+          line.style.color = "inherit";
+          line.classList.remove("selected");
+        }
+        if (row) row.classList.add("hidden");
+        addTzButton.disabled = false;
+        if (activeLine && activeLine.dataset.slot === `${slot}`) {
+          activeLine = null;
+        }
+        updateTimes();
+      });
     });
 
     panels.forEach(panel => {
