@@ -210,6 +210,10 @@
       cursor: not-allowed;
     }
 
+    .mobile-only {
+      display: none;
+    }
+
     .muted {
       font-size: 11px;
       color: var(--muted);
@@ -304,6 +308,10 @@
         min-height: 40px;
       }
 
+      .mobile-only {
+        display: inline-flex;
+      }
+
       select,
       input[type=number],
       .btn {
@@ -345,6 +353,7 @@
 
         <div class="button-row">
           <button id="addTz" class="btn" type="button">+ Add Timezone</button>
+          <button id="offsetToggleBtn" class="btn mobile-only" type="button">Date Offset</button>
           <div class="muted">Up to 5 total</div>
         </div>
 
@@ -416,6 +425,7 @@
     const dayOffsetInput = document.getElementById("dayOffset");
     const tzSelects = Array.from(document.querySelectorAll(".tz-select"));
     const addTzButton = document.getElementById("addTz");
+    const offsetToggleBtn = document.getElementById("offsetToggleBtn");
     const removeButtons = Array.from(document.querySelectorAll(".tz-remove"));
     const extraRows = [
       document.getElementById("extra-row-1"),
@@ -794,6 +804,10 @@
 
     sliderToggle.addEventListener("change", applySliderToggle);
     offsetToggle.addEventListener("change", applyOffsetToggle);
+    offsetToggleBtn.addEventListener("click", () => {
+      offsetToggle.value = offsetToggle.value === "show" ? "hide" : "show";
+      applyOffsetToggle();
+    });
 
     const themeToggle = document.getElementById("themeToggle");
     themeToggle.addEventListener("change", () => {
