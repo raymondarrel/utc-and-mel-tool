@@ -1,0 +1,713 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MEL & UTC (DAZ Tools)</title>
+  <style>
+    @import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap");
+
+    :root {
+      --bg: #ffffff;
+      --panel: #f7f8fa;
+      --panel-border: #e4e8ef;
+      --glow: rgba(0, 0, 0, 0.08);
+      --title: #0b0f14;
+      --local: #1f2937;
+      --utc: #0b5bd3;
+      --catb: #8a6a00;
+      --catc: #a34a00;
+      --catd: #b91c1c;
+      --text: #0b0f14;
+      --muted: #5f6b7a;
+      --panel-strong: #ffffff;
+      --shadow: rgba(12, 18, 30, 0.08);
+      --input-border: #d6dbe3;
+      --accent: #0b5bd3;
+    }
+
+    body[data-theme="dark"] {
+      --bg: #0b0f14;
+      --panel: rgba(0, 0, 0, 0.82);
+      --panel-border: rgba(255, 255, 255, 0.08);
+      --glow: rgba(120, 200, 255, 0.25);
+      --title: #ffffff;
+      --local: #ebebeb;
+      --utc: #78c8ff;
+      --catb: #ffd278;
+      --catc: #ffaa78;
+      --catd: #ff7878;
+      --text: #ffffff;
+      --muted: #b7c0cc;
+      --panel-strong: rgba(0, 0, 0, 0.55);
+      --shadow: rgba(0, 0, 0, 0.35);
+      --input-border: rgba(255, 255, 255, 0.2);
+      --accent: #78c8ff;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: start center;
+      background: var(--bg);
+      color: var(--text);
+      font-family: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+    }
+
+    .frame {
+      padding: 24px;
+      width: min(98vw, 1400px);
+    }
+
+    .title {
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+      margin: 6px 0 12px;
+      color: var(--title);
+      text-shadow: 0 0 12px var(--glow);
+    }
+
+    .workspace {
+      background: var(--panel);
+      border: 1px solid var(--panel-border);
+      color: var(--text);
+      padding: 14px;
+      border-radius: 22px;
+      width: 100%;
+      min-height: 60vh;
+      position: relative;
+      box-shadow: 0 18px 30px var(--shadow);
+      overflow: hidden;
+      resize: both;
+    }
+
+    .panel {
+      position: absolute;
+      background: var(--panel-strong);
+      border: 1px solid var(--panel-border);
+      border-radius: 16px;
+      padding: 10px 12px 12px;
+      box-shadow: 0 10px 22px var(--shadow);
+      --panel-font: 16px;
+      min-width: 240px;
+      min-height: 140px;
+      resize: both;
+      overflow: auto;
+    }
+
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      margin-bottom: 8px;
+      cursor: move;
+      user-select: none;
+    }
+
+    .panel-controls {
+      display: grid;
+      gap: 6px;
+      font-size: 12px;
+      color: var(--muted);
+      margin: 8px 0;
+    }
+
+    .panel-controls label {
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .panel .line {
+      margin: 4px 0;
+      font-size: var(--panel-font);
+      text-shadow: none;
+    }
+
+    .time-part {
+      font-size: 1.15em;
+      font-weight: 600;
+    }
+
+    .date-part {
+      font-size: 0.9em;
+      opacity: 0.85;
+      margin-left: 6px;
+    }
+
+    .tz-row {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 6px;
+      margin: 8px 0;
+      align-items: center;
+    }
+
+    select, input[type=number] {
+      width: 100%;
+      padding: 6px 8px;
+      border-radius: 10px;
+      border: 1px solid var(--input-border);
+      background: var(--panel-strong);
+      color: var(--text);
+      font-family: inherit;
+      font-size: 12px;
+    }
+
+    input[type=range] {
+      width: 100%;
+      accent-color: var(--accent);
+    }
+
+    .button-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      margin-top: 8px;
+    }
+
+    .btn {
+      border: 1px solid var(--input-border);
+      background: var(--panel-strong);
+      color: var(--text);
+      border-radius: 10px;
+      padding: 6px 10px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .muted {
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .tz-primary {
+      font-size: calc(var(--panel-font) * 1.35);
+      font-weight: 600;
+    }
+
+    .mel-strong {
+      font-weight: 700;
+    }
+
+    .tz-line {
+      cursor: pointer;
+      outline: none;
+    }
+
+    .tz-line.selected {
+      box-shadow: inset 0 0 0 2px var(--accent);
+      border-radius: 8px;
+      padding: 2px 4px;
+    }
+
+    .local { color: var(--local); }
+    .utc { color: var(--utc); }
+    .catb { color: var(--catb); }
+    .catc { color: var(--catc); }
+    .catd { color: var(--catd); }
+
+    .footer {
+      margin-top: 10px;
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .toolbar {
+      display: grid;
+      gap: 10px;
+      align-items: start;
+      margin: 4px 0 12px;
+      max-width: 220px;
+    }
+
+    .toolbar-group {
+      display: grid;
+      gap: 6px;
+    }
+  </style>
+</head>
+<body data-theme="dark">
+  <div class="frame">
+    <div class="title">MEL and UTC Tool</div>
+    <div id="workspace" class="workspace">
+      <div class="panel" id="panel-timezones" data-x="18" data-y="18" data-w="520" data-h="320" data-font="18">
+        <div class="panel-header">Time Zones</div>
+        <div id="tz-utc" class="line utc tz-primary"></div>
+        <div id="tz-bne" class="line local tz-primary"></div>
+
+        <div class="tz-row hidden" id="extra-row-1">
+          <select class="tz-select" data-slot="1"></select>
+          <div class="line tz-line tz-primary" id="tz1" data-slot="1" tabindex="0"></div>
+        </div>
+        <div class="tz-row hidden" id="extra-row-2">
+          <select class="tz-select" data-slot="2"></select>
+          <div class="line tz-line tz-primary" id="tz2" data-slot="2" tabindex="0"></div>
+        </div>
+        <div class="tz-row hidden" id="extra-row-3">
+          <select class="tz-select" data-slot="3"></select>
+          <div class="line tz-line tz-primary" id="tz3" data-slot="3" tabindex="0"></div>
+        </div>
+
+        <div class="button-row">
+          <button id="addTz" class="btn" type="button">+ Add Timezone</button>
+          <div class="muted">Up to 5 total</div>
+        </div>
+
+        <div class="panel-controls">
+          <label for="font-timezones">Font size</label>
+          <input type="range" min="12" max="30" value="18" id="font-timezones" class="font-slider" data-panel="panel-timezones" />
+        </div>
+      </div>
+
+      <div class="panel" id="panel-mel" data-x="560" data-y="18" data-w="360" data-h="220" data-font="16">
+        <div class="panel-header">MEL Windows</div>
+        <div id="catb" class="line catb mel-strong"></div>
+        <div id="catc" class="line catc mel-strong"></div>
+        <div id="catd" class="line catd mel-strong"></div>
+        <div class="panel-controls">
+          <label for="font-mel">Font size</label>
+          <input type="range" min="12" max="26" value="16" id="font-mel" class="font-slider" data-panel="panel-mel" />
+        </div>
+      </div>
+
+      <div class="panel hidden" id="panel-offset" data-x="560" data-y="260" data-w="360" data-h="260" data-font="16">
+        <div class="panel-header">Date Offset</div>
+        <div class="panel-controls" style="margin-top: 0;">
+          <label for="dayOffset">Enter days from today (e.g., -2 or 5)</label>
+          <input type="number" id="dayOffset" value="0" step="1" />
+        </div>
+        <div id="offsetLocal" class="line local"></div>
+        <div id="offsetUtc" class="line utc"></div>
+        <div class="panel-controls">
+          <label for="font-offset">Font size</label>
+          <input type="range" min="12" max="26" value="16" id="font-offset" class="font-slider" data-panel="panel-offset" />
+        </div>
+      </div>
+    </div>
+    <div class="toolbar">
+      <div class="toolbar-group">
+        <label for="sliderToggle" class="muted">Font sliders</label>
+        <select id="sliderToggle">
+          <option value="show">Show</option>
+          <option value="hide" selected>Hide</option>
+        </select>
+      </div>
+      <div class="toolbar-group">
+        <label for="themeToggle" class="muted">Theme</label>
+        <select id="themeToggle">
+          <option value="light">Light</option>
+          <option value="dark" selected>Dark</option>
+        </select>
+      </div>
+      <div class="toolbar-group">
+        <label for="melMode" class="muted">MEL time base</label>
+        <select id="melMode">
+          <option value="utc" selected>UTC</option>
+          <option value="local">Local</option>
+        </select>
+      </div>
+      <div class="toolbar-group">
+        <label for="offsetToggle" class="muted">Date offset</label>
+        <select id="offsetToggle">
+          <option value="show">Show</option>
+          <option value="hide" selected>Hide</option>
+        </select>
+      </div>
+    </div>
+    <div class="footer">Updates every second</div>
+  </div>
+
+  <script>
+    const dayOffsetInput = document.getElementById("dayOffset");
+    const tzSelects = Array.from(document.querySelectorAll(".tz-select"));
+    const addTzButton = document.getElementById("addTz");
+    const extraRows = [
+      document.getElementById("extra-row-1"),
+      document.getElementById("extra-row-2"),
+      document.getElementById("extra-row-3")
+    ];
+
+    const workspace = document.getElementById("workspace");
+    const panels = Array.from(document.querySelectorAll(".panel"));
+    let topZ = 10;
+    const sliderToggle = document.getElementById("sliderToggle");
+    const melMode = document.getElementById("melMode");
+    const offsetToggle = document.getElementById("offsetToggle");
+
+    const timezones = [
+      { code: "", city: "None", tz: "", color: "" },
+
+      { code: "SYD", city: "Sydney, Australia", tz: "Australia/Sydney", color: "#0b5bd3" },
+      { code: "MEL", city: "Melbourne, Australia", tz: "Australia/Melbourne", color: "#1f7a8c" },
+      { code: "BNE", city: "Brisbane, Australia", tz: "Australia/Brisbane", color: "#c07000" },
+      { code: "PER", city: "Perth, Australia", tz: "Australia/Perth", color: "#7c3aed" },
+      { code: "ADL", city: "Adelaide, Australia", tz: "Australia/Adelaide", color: "#0f766e" },
+      { code: "CBR", city: "Canberra, Australia", tz: "Australia/Sydney", color: "#2563eb" },
+      { code: "CNS", city: "Cairns, Australia", tz: "Australia/Brisbane", color: "#d97706" },
+      { code: "DRW", city: "Darwin, Australia", tz: "Australia/Darwin", color: "#be123c" },
+      { code: "HBA", city: "Hobart, Australia", tz: "Australia/Hobart", color: "#0891b2" },
+      { code: "OOL", city: "Gold Coast, Australia", tz: "Australia/Brisbane", color: "#ca8a04" },
+      { code: "TSV", city: "Townsville, Australia", tz: "Australia/Brisbane", color: "#b45309" },
+      { code: "MCY", city: "Sunshine Coast, Australia", tz: "Australia/Brisbane", color: "#a16207" },
+
+      { code: "AKL", city: "Auckland, New Zealand", tz: "Pacific/Auckland", color: "#0ea5e9" },
+      { code: "WLG", city: "Wellington, New Zealand", tz: "Pacific/Auckland", color: "#22c55e" },
+      { code: "CHC", city: "Christchurch, New Zealand", tz: "Pacific/Auckland", color: "#16a34a" },
+      { code: "ZQN", city: "Queenstown, New Zealand", tz: "Pacific/Auckland", color: "#14b8a6" },
+      { code: "DUD", city: "Dunedin, New Zealand", tz: "Pacific/Auckland", color: "#10b981" },
+
+      { code: "LAX", city: "Los Angeles, USA", tz: "America/Los_Angeles", color: "#ef4444" },
+      { code: "SFO", city: "San Francisco, USA", tz: "America/Los_Angeles", color: "#f97316" },
+      { code: "SEA", city: "Seattle, USA", tz: "America/Los_Angeles", color: "#fb7185" },
+      { code: "DEN", city: "Denver, USA", tz: "America/Denver", color: "#f59e0b" },
+      { code: "ORD", city: "Chicago, USA", tz: "America/Chicago", color: "#facc15" },
+      { code: "ATL", city: "Atlanta, USA", tz: "America/New_York", color: "#84cc16" },
+      { code: "JFK", city: "New York, USA", tz: "America/New_York", color: "#22c55e" },
+      { code: "BOS", city: "Boston, USA", tz: "America/New_York", color: "#10b981" },
+      { code: "MIA", city: "Miami, USA", tz: "America/New_York", color: "#14b8a6" },
+      { code: "DFW", city: "Dallas/Fort Worth, USA", tz: "America/Chicago", color: "#0ea5e9" },
+      { code: "IAD", city: "Washington, DC, USA", tz: "America/New_York", color: "#6366f1" },
+
+      { code: "YYZ", city: "Toronto, Canada", tz: "America/Toronto", color: "#8b5cf6" },
+      { code: "YVR", city: "Vancouver, Canada", tz: "America/Vancouver", color: "#a855f7" },
+      { code: "MEX", city: "Mexico City, Mexico", tz: "America/Mexico_City", color: "#d946ef" },
+      { code: "GRU", city: "São Paulo, Brazil", tz: "America/Sao_Paulo", color: "#ec4899" },
+      { code: "EZE", city: "Buenos Aires, Argentina", tz: "America/Argentina/Buenos_Aires", color: "#f43f5e" },
+
+      { code: "LHR", city: "London, UK", tz: "Europe/London", color: "#0f766e" },
+      { code: "CDG", city: "Paris, France", tz: "Europe/Paris", color: "#0d9488" },
+      { code: "AMS", city: "Amsterdam, Netherlands", tz: "Europe/Amsterdam", color: "#14b8a6" },
+      { code: "FRA", city: "Frankfurt, Germany", tz: "Europe/Berlin", color: "#06b6d4" },
+      { code: "MUC", city: "Munich, Germany", tz: "Europe/Berlin", color: "#38bdf8" },
+      { code: "MAD", city: "Madrid, Spain", tz: "Europe/Madrid", color: "#3b82f6" },
+      { code: "BCN", city: "Barcelona, Spain", tz: "Europe/Madrid", color: "#6366f1" },
+      { code: "FCO", city: "Rome, Italy", tz: "Europe/Rome", color: "#8b5cf6" },
+      { code: "MXP", city: "Milan, Italy", tz: "Europe/Rome", color: "#a855f7" },
+      { code: "ZRH", city: "Zurich, Switzerland", tz: "Europe/Zurich", color: "#9333ea" },
+
+      { code: "HND", city: "Tokyo (Haneda), Japan", tz: "Asia/Tokyo", color: "#ef4444" },
+      { code: "NRT", city: "Tokyo (Narita), Japan", tz: "Asia/Tokyo", color: "#f97316" },
+      { code: "ICN", city: "Seoul (Incheon), South Korea", tz: "Asia/Seoul", color: "#f59e0b" },
+      { code: "HKG", city: "Hong Kong", tz: "Asia/Hong_Kong", color: "#84cc16" },
+      { code: "SIN", city: "Singapore", tz: "Asia/Singapore", color: "#22c55e" },
+      { code: "BKK", city: "Bangkok, Thailand", tz: "Asia/Bangkok", color: "#10b981" },
+      { code: "KUL", city: "Kuala Lumpur, Malaysia", tz: "Asia/Kuala_Lumpur", color: "#14b8a6" },
+      { code: "PEK", city: "Beijing, China", tz: "Asia/Shanghai", color: "#0ea5e9" },
+      { code: "PVG", city: "Shanghai, China", tz: "Asia/Shanghai", color: "#3b82f6" },
+      { code: "CAN", city: "Guangzhou, China", tz: "Asia/Shanghai", color: "#6366f1" },
+
+      { code: "DXB", city: "Dubai, UAE", tz: "Asia/Dubai", color: "#f97316" },
+      { code: "DOH", city: "Doha, Qatar", tz: "Asia/Qatar", color: "#f59e0b" },
+
+      { code: "JNB", city: "Johannesburg, South Africa", tz: "Africa/Johannesburg", color: "#22c55e" },
+      { code: "CPT", city: "Cape Town, South Africa", tz: "Africa/Johannesburg", color: "#10b981" }
+    ];
+
+    function pad(n) {
+      return n.toString().padStart(2, "0");
+    }
+
+    function formatTimeDate(d, tz) {
+      const parts = new Intl.DateTimeFormat("en-GB", {
+        timeZone: tz,
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false
+      }).formatToParts(d);
+
+      const map = Object.fromEntries(parts.map(p => [p.type, p.value]));
+      return {
+        time: `${map.hour}:${map.minute}`,
+        date: `${map.day}/${map.month}/${map.year}`
+      };
+    }
+
+    function formatUTCDate(d) {
+      return `${pad(d.getUTCDate())}/${pad(d.getUTCMonth() + 1)}/${d.getUTCFullYear()}`;
+    }
+
+    function formatLocalDate(d) {
+      return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`;
+    }
+
+    function getOffsetDays() {
+      const value = parseInt(dayOffsetInput.value, 10);
+      return Number.isNaN(value) ? 0 : value;
+    }
+
+    function hydrateTimezoneSelects() {
+      tzSelects.forEach((select, idx) => {
+        if (select.options.length > 0) return;
+        timezones.forEach(tz => {
+          const opt = document.createElement("option");
+          opt.value = tz.code;
+          opt.textContent = tz.code
+            ? `${tz.city} — ${tz.code}`
+            : "None";
+          opt.dataset.tz = tz.tz;
+          opt.dataset.color = tz.color;
+          select.appendChild(opt);
+        });
+        if (idx === 0) select.value = "BNE";
+      });
+    }
+
+    function initPanel(panel) {
+      const x = parseInt(panel.dataset.x, 10) || 0;
+      const y = parseInt(panel.dataset.y, 10) || 0;
+      const w = parseInt(panel.dataset.w, 10) || 320;
+      const h = parseInt(panel.dataset.h, 10) || 200;
+      const font = parseInt(panel.dataset.font, 10) || 16;
+
+      panel.style.left = `${x}px`;
+      panel.style.top = `${y}px`;
+      panel.style.width = `${w}px`;
+      panel.style.height = `${h}px`;
+      panel.style.setProperty("--panel-font", `${font}px`);
+
+      const fontInput = panel.querySelector(".font-slider");
+      if (fontInput) fontInput.value = font;
+    }
+
+    function clamp(value, min, max) {
+      return Math.min(Math.max(value, min), max);
+    }
+
+    function enableDrag(panel) {
+      const header = panel.querySelector(".panel-header");
+      if (!header) return;
+
+      header.addEventListener("pointerdown", (event) => {
+        if (event.button !== 0) return;
+        panel.setPointerCapture(event.pointerId);
+        panel.style.zIndex = `${++topZ}`;
+
+        const startX = event.clientX;
+        const startY = event.clientY;
+        const rect = panel.getBoundingClientRect();
+        const workspaceRect = workspace.getBoundingClientRect();
+        const offsetX = rect.left - workspaceRect.left;
+        const offsetY = rect.top - workspaceRect.top;
+
+        function onMove(e) {
+          const dx = e.clientX - startX;
+          const dy = e.clientY - startY;
+          const maxX = workspace.clientWidth - panel.offsetWidth;
+          const maxY = workspace.clientHeight - panel.offsetHeight;
+          const nextX = clamp(offsetX + dx, 0, Math.max(0, maxX));
+          const nextY = clamp(offsetY + dy, 0, Math.max(0, maxY));
+          panel.style.left = `${nextX}px`;
+          panel.style.top = `${nextY}px`;
+        }
+
+        function onUp() {
+          panel.releasePointerCapture(event.pointerId);
+          header.removeEventListener("pointermove", onMove);
+          header.removeEventListener("pointerup", onUp);
+          header.removeEventListener("pointercancel", onUp);
+        }
+
+        header.addEventListener("pointermove", onMove);
+        header.addEventListener("pointerup", onUp);
+        header.addEventListener("pointercancel", onUp);
+      });
+    }
+
+    function bindPanelControls(panel) {
+      const fontInput = panel.querySelector(".font-slider");
+      if (fontInput) {
+        fontInput.addEventListener("input", () => {
+          panel.style.setProperty("--panel-font", `${fontInput.value}px`);
+        });
+      }
+    }
+
+    function getTimezoneEntry(code) {
+      return timezones.find(tz => tz.code === code);
+    }
+
+    const tzToCode = {
+      "Australia/Brisbane": "BNE",
+      "Australia/Sydney": "SYD",
+      "Australia/Melbourne": "MEL",
+      "Australia/Perth": "PER",
+      "Australia/Adelaide": "ADL",
+      "Australia/Darwin": "DRW",
+      "Australia/Hobart": "HBA",
+      "Pacific/Auckland": "AKL",
+      "America/New_York": "JFK",
+      "America/Los_Angeles": "LAX",
+      "Europe/London": "LHR",
+      "Asia/Tokyo": "HND"
+    };
+
+    function getLocalCode() {
+      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      return tzToCode[tz] || "LOCAL";
+    }
+
+    function addDaysUTC(date, days) {
+      const d = new Date(date.getTime());
+      d.setUTCDate(d.getUTCDate() + days);
+      return d;
+    }
+
+    function addDaysLocal(date, days) {
+      const d = new Date(date.getTime());
+      d.setDate(d.getDate() + days);
+      return d;
+    }
+
+    function updateTimes() {
+      const now = new Date();
+
+      const isMelLocal = melMode.value === "local";
+      const catB = isMelLocal ? addDaysLocal(now, 3) : addDaysUTC(now, 3);
+      const catC = isMelLocal ? addDaysLocal(now, 10) : addDaysUTC(now, 10);
+      const catD = isMelLocal ? addDaysLocal(now, 120) : addDaysUTC(now, 120);
+
+      const offsetDays = getOffsetDays();
+      const offsetLocal = addDaysLocal(now, offsetDays);
+      const offsetUtc = addDaysUTC(now, offsetDays);
+
+      const utcParts = formatTimeDate(now, "UTC");
+      document.getElementById("tz-utc").innerHTML = `UTC: <span class="time-part">${utcParts.time}</span><span class="date-part">${utcParts.date}</span>`;
+
+      const localLine = document.getElementById("tz-bne");
+      const localCode = getLocalCode();
+      const localTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      const localParts = formatTimeDate(now, localTz);
+      localLine.innerHTML = `${localCode}: <span class="time-part">${localParts.time}</span><span class="date-part">${localParts.date}</span>`;
+      localLine.style.display = "block";
+      const localEntry = getTimezoneEntry(localCode);
+      localLine.style.color = localEntry?.color || "inherit";
+      const melLabel = isMelLocal ? "MEL (Local)" : "MEL (UTC)";
+      document.getElementById("catb").textContent = `CAT B ${melLabel}: ${formatUTCDate(catB)}`;
+      document.getElementById("catc").textContent = `CAT C ${melLabel}: ${formatUTCDate(catC)}`;
+      document.getElementById("catd").textContent = `CAT D ${melLabel}: ${formatUTCDate(catD)}`;
+      document.getElementById("offsetLocal").textContent = `LOCAL (offset): ${formatLocalDate(offsetLocal)}`;
+      document.getElementById("offsetUtc").textContent = `UTC (offset): ${formatUTCDate(offsetUtc)}`;
+
+      tzSelects.forEach((select, idx) => {
+        if (extraRows[idx] && extraRows[idx].classList.contains("hidden")) {
+          return;
+        }
+        const tz = select.value;
+        const line = document.getElementById(`tz${idx + 1}`);
+        if (!tz) {
+          line.textContent = "";
+          return;
+        }
+        const entry = getTimezoneEntry(tz);
+        if (!entry) return;
+        const parts = formatTimeDate(now, entry.tz);
+        line.innerHTML = `${entry.code}: <span class="time-part">${parts.time}</span><span class="date-part">${parts.date}</span>`;
+        line.style.color = entry.color || "inherit";
+      });
+    }
+
+    dayOffsetInput.addEventListener("input", updateTimes);
+    tzSelects.forEach(select => select.addEventListener("change", () => {
+      if (select.value) {
+        select.classList.add("hidden");
+      }
+      updateTimes();
+    }));
+
+    addTzButton.addEventListener("click", () => {
+      const nextRow = extraRows.find(row => row.classList.contains("hidden"));
+      if (!nextRow) return;
+      nextRow.classList.remove("hidden");
+      if (!extraRows.find(row => row.classList.contains("hidden"))) {
+        addTzButton.disabled = true;
+      }
+      updateTimes();
+    });
+
+    let activeLine = null;
+    document.querySelectorAll(".tz-line").forEach(line => {
+      line.addEventListener("click", () => {
+        document.querySelectorAll(".tz-line.selected").forEach(el => el.classList.remove("selected"));
+        line.classList.add("selected");
+        activeLine = line;
+      });
+    });
+
+    document.addEventListener("keydown", (event) => {
+      if (!activeLine) return;
+      if (event.key !== "Delete" && event.key !== "Backspace") return;
+      const slot = parseInt(activeLine.dataset.slot, 10);
+      if (!slot) return;
+      const row = document.getElementById(`extra-row-${slot}`);
+      const select = document.querySelector(`.tz-select[data-slot="${slot}"]`);
+      if (select) select.value = "";
+      if (select) select.classList.remove("hidden");
+      activeLine.textContent = "";
+      activeLine.style.color = "inherit";
+      if (row) row.classList.add("hidden");
+      addTzButton.disabled = false;
+      activeLine.classList.remove("selected");
+      activeLine = null;
+      updateTimes();
+    });
+
+    panels.forEach(panel => {
+      initPanel(panel);
+      enableDrag(panel);
+      bindPanelControls(panel);
+    });
+
+    function applySliderToggle() {
+      const show = sliderToggle.value === "show";
+      document.querySelectorAll(".panel-controls").forEach(ctrl => {
+        ctrl.style.display = show ? "grid" : "none";
+      });
+    }
+
+    function applyOffsetToggle() {
+      const show = offsetToggle.value === "show";
+      const panel = document.getElementById("panel-offset");
+      if (panel) panel.classList.toggle("hidden", !show);
+    }
+
+    sliderToggle.addEventListener("change", applySliderToggle);
+    offsetToggle.addEventListener("change", applyOffsetToggle);
+
+    const themeToggle = document.getElementById("themeToggle");
+    themeToggle.addEventListener("change", () => {
+      document.body.setAttribute("data-theme", themeToggle.value);
+    });
+    melMode.addEventListener("change", updateTimes);
+
+    hydrateTimezoneSelects();
+    applySliderToggle();
+    applyOffsetToggle();
+    updateTimes();
+    setInterval(updateTimes, 1000);
+  </script>
+</body>
+</html>
