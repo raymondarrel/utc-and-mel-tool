@@ -171,6 +171,40 @@
       justify-content: center;
     }
 
+    .calc-display {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid var(--input-border);
+      background: var(--panel-strong);
+      color: var(--text);
+      font-family: inherit;
+      font-size: 16px;
+      text-align: right;
+      margin-bottom: 10px;
+    }
+
+    .calc-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .calc-btn {
+      border: 1px solid var(--input-border);
+      background: var(--panel-strong);
+      color: var(--text);
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    .calc-btn.op {
+      color: var(--utc);
+      font-weight: 600;
+    }
+
     select, input[type=number] {
       width: 100%;
       padding: 10px 12px;
@@ -312,6 +346,12 @@
         display: inline-flex;
       }
 
+      .calc-btn {
+        font-size: 16px;
+        padding: 12px 14px;
+        min-height: 44px;
+      }
+
       select,
       input[type=number],
       .btn {
@@ -354,6 +394,7 @@
         <div class="button-row">
           <button id="addTz" class="btn" type="button">+ Add Timezone</button>
           <button id="offsetToggleBtn" class="btn mobile-only" type="button">Date Offset</button>
+          <button id="calcToggleBtn" class="btn mobile-only" type="button">Calculator</button>
           <div class="muted">Up to 5 total</div>
         </div>
 
@@ -387,6 +428,35 @@
           <input type="range" min="12" max="26" value="16" id="font-offset" class="font-slider" data-panel="panel-offset" />
         </div>
       </div>
+
+      <div class="panel hidden" id="panel-calc" data-x="940" data-y="18" data-w="320" data-h="320" data-font="16">
+        <div class="panel-header">Calculator</div>
+        <input id="calcDisplay" class="calc-display" type="text" value="0" readonly />
+        <div class="calc-grid">
+          <button class="calc-btn" data-val="7">7</button>
+          <button class="calc-btn" data-val="8">8</button>
+          <button class="calc-btn" data-val="9">9</button>
+          <button class="calc-btn op" data-op="/">÷</button>
+
+          <button class="calc-btn" data-val="4">4</button>
+          <button class="calc-btn" data-val="5">5</button>
+          <button class="calc-btn" data-val="6">6</button>
+          <button class="calc-btn op" data-op="*">×</button>
+
+          <button class="calc-btn" data-val="1">1</button>
+          <button class="calc-btn" data-val="2">2</button>
+          <button class="calc-btn" data-val="3">3</button>
+          <button class="calc-btn op" data-op="-">−</button>
+
+          <button class="calc-btn" data-val="0">0</button>
+          <button class="calc-btn" data-val=".">.</button>
+          <button class="calc-btn op" data-action="clear">C</button>
+          <button class="calc-btn op" data-op="+">+</button>
+
+          <button class="calc-btn op" data-action="back">⌫</button>
+          <button class="calc-btn op" data-action="equals" style="grid-column: span 3;">=</button>
+        </div>
+      </div>
     </div>
     <div class="toolbar">
       <div class="toolbar-group">
@@ -417,6 +487,13 @@
           <option value="hide" selected>Hide</option>
         </select>
       </div>
+      <div class="toolbar-group">
+        <label for="calcToggle" class="muted">Calculator</label>
+        <select id="calcToggle">
+          <option value="show">Show</option>
+          <option value="hide" selected>Hide</option>
+        </select>
+      </div>
     </div>
     <div class="footer">Updates every second</div>
   </div>
@@ -426,6 +503,7 @@
     const tzSelects = Array.from(document.querySelectorAll(".tz-select"));
     const addTzButton = document.getElementById("addTz");
     const offsetToggleBtn = document.getElementById("offsetToggleBtn");
+    const calcToggleBtn = document.getElementById("calcToggleBtn");
     const removeButtons = Array.from(document.querySelectorAll(".tz-remove"));
     const extraRows = [
       document.getElementById("extra-row-1"),
@@ -439,6 +517,8 @@
     const sliderToggle = document.getElementById("sliderToggle");
     const melMode = document.getElementById("melMode");
     const offsetToggle = document.getElementById("offsetToggle");
+    const calcToggle = document.getElementById("calcToggle");
+    const calcDisplay = document.getElementById("calcDisplay");
 
     const timezones = [
       { code: "", city: "None", tz: "", color: "" },
@@ -802,11 +882,22 @@
       if (panel) panel.classList.toggle("hidden", !show);
     }
 
+    function applyCalcToggle() {
+      const show = calcToggle.value === "show";
+      const panel = document.getElementById("panel-calc");
+      if (panel) panel.classList.toggle("hidden", !show);
+    }
+
     sliderToggle.addEventListener("change", applySliderToggle);
     offsetToggle.addEventListener("change", applyOffsetToggle);
+    calcToggle.addEventListener("change", applyCalcToggle);
     offsetToggleBtn.addEventListener("click", () => {
       offsetToggle.value = offsetToggle.value === "show" ? "hide" : "show";
       applyOffsetToggle();
+    });
+    calcToggleBtn.addEventListener("click", () => {
+      calcToggle.value = calcToggle.value === "show" ? "hide" : "show";
+      applyCalcToggle();
     });
 
     const themeToggle = document.getElementById("themeToggle");
@@ -815,9 +906,104 @@
     });
     melMode.addEventListener("change", updateTimes);
 
+    function calcSet(value) {
+      calcDisplay.value = value;
+    }
+
+    function calcAppend(value) {
+      const current = calcDisplay.value;
+      if (current === "0" && value !== ".") {
+        calcSet(value);
+      } else {
+        calcSet(current + value);
+      }
+    }
+
+    function calcEvaluate() {
+      try {
+        const safe = calcDisplay.value.replace(/[^0-9+\-*/().]/g, "");
+        if (!safe) return;
+        const result = Function(`"use strict"; return (${safe})`)();
+        calcSet(String(result));
+      } catch {
+        calcSet("Error");
+      }
+    }
+
+    document.querySelectorAll(".calc-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const action = btn.dataset.action;
+        const val = btn.dataset.val;
+        const op = btn.dataset.op;
+
+        if (action === "clear") {
+          calcSet("0");
+          return;
+        }
+        if (action === "back") {
+          const next = calcDisplay.value.slice(0, -1) || "0";
+          calcSet(next);
+          return;
+        }
+        if (action === "equals") {
+          calcEvaluate();
+          return;
+        }
+        if (val) {
+          calcAppend(val);
+          return;
+        }
+        if (op) {
+          calcAppend(op);
+        }
+      });
+    });
+
+    document.addEventListener("keydown", (event) => {
+      const panel = document.getElementById("panel-calc");
+      if (panel && panel.classList.contains("hidden")) return;
+
+      const target = event.target;
+      const tag = target?.tagName?.toLowerCase();
+      if (tag === "input" || tag === "select" || tag === "textarea") return;
+
+      const key = event.key;
+      if (key >= "0" && key <= "9") {
+        calcAppend(key);
+        event.preventDefault();
+        return;
+      }
+      if (key === ".") {
+        calcAppend(".");
+        event.preventDefault();
+        return;
+      }
+      if (key === "+" || key === "-" || key === "*" || key === "/") {
+        calcAppend(key);
+        event.preventDefault();
+        return;
+      }
+      if (key === "Enter" || key === "=") {
+        calcEvaluate();
+        event.preventDefault();
+        return;
+      }
+      if (key === "Backspace") {
+        const next = calcDisplay.value.slice(0, -1) || "0";
+        calcSet(next);
+        event.preventDefault();
+        return;
+      }
+      if (key === "Escape") {
+        calcSet("0");
+        event.preventDefault();
+      }
+    });
+
     hydrateTimezoneSelects();
     applySliderToggle();
     applyOffsetToggle();
+    applyCalcToggle();
     updateTimes();
     setInterval(updateTimes, 1000);
   </script>
