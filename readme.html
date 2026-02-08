@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MEL & UTC (Read-me)</title>
+  <style>
+    @import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap");
+
+    :root {
+      --bg: #ffffff;
+      --panel: #f7f8fa;
+      --panel-border: #e4e8ef;
+      --glow: rgba(0, 0, 0, 0.08);
+      --title: #0b0f14;
+      --text: #0b0f14;
+      --muted: #5f6b7a;
+      --panel-strong: #ffffff;
+      --shadow: rgba(12, 18, 30, 0.08);
+      --input-border: #d6dbe3;
+      --accent: #0b5bd3;
+    }
+
+    body[data-theme="dark"] {
+      --bg: #0b0f14;
+      --panel: rgba(0, 0, 0, 0.82);
+      --panel-border: rgba(255, 255, 255, 0.08);
+      --glow: rgba(120, 200, 255, 0.25);
+      --title: #ffffff;
+      --text: #ffffff;
+      --muted: #b7c0cc;
+      --panel-strong: rgba(0, 0, 0, 0.55);
+      --shadow: rgba(0, 0, 0, 0.35);
+      --input-border: rgba(255, 255, 255, 0.2);
+      --accent: #78c8ff;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: start center;
+      background: var(--bg);
+      color: var(--text);
+      font-family: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+    }
+
+    .frame {
+      padding: 24px;
+      width: min(98vw, 1000px);
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .title {
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+      color: var(--title);
+      text-shadow: 0 0 12px var(--glow);
+    }
+
+    .nav {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .nav a {
+      text-decoration: none;
+      color: var(--text);
+      border: 1px solid var(--input-border);
+      background: var(--panel-strong);
+      padding: 8px 12px;
+      border-radius: 10px;
+      font-size: 13px;
+    }
+
+    .nav a.active {
+      border-color: var(--accent);
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--panel-border);
+      border-radius: 16px;
+      padding: 16px;
+      box-shadow: 0 12px 24px var(--shadow);
+    }
+
+    h2 {
+      margin: 0 0 8px;
+      font-size: 16px;
+    }
+
+    p, li {
+      font-size: 14px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    ul {
+      padding-left: 18px;
+      margin: 8px 0 0;
+    }
+
+    @media (max-width: 900px) {
+      .frame {
+        width: 100%;
+        padding: 16px;
+      }
+    }
+  </style>
+</head>
+<body data-theme="dark">
+  <div class="frame">
+    <div class="topbar">
+      <div class="title">Read-me</div>
+      <div class="nav">
+        <a href="index.html">Home</a>
+        <a class="active" href="readme.html">Read-me</a>
+        <a href="fids.html">FIDS</a>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>How to Use</h2>
+      <ul>
+        <li>Use <strong>Time Zones</strong> to view UTC and your local time.</li>
+        <li>Click <strong>+ Add Timezone</strong> to add extra time zones.</li>
+        <li>Select a city from the dropdown; it will display the 3-letter airport code.</li>
+        <li>To remove a timezone: tap the timezone line to select it, then press Delete (desktop) or tap Remove (mobile).</li>
+      </ul>
+      <h2>Features</h2>
+      <ul>
+        <li>View MEL in UTC or Local time via the <strong>MEL time base</strong> toggle.</li>
+        <li>View or hide the <strong>Calculator</strong> from the toolbar.</li>
+        <li>Font size can be adjusted with sliders; the sliders can be toggled on or off.</li>
+        <li>Theme can be switched between <strong>Dark</strong> and <strong>Light</strong> modes.</li>
+      </ul>
+      <h2>Panels and Toggles</h2>
+      <ul>
+        <li>Use the toolbar toggles to show/hide the Date Offset panel and Calculator.</li>
+        <li>The Date Offset panel is off by default and can be enabled from the toolbar or mobile button.</li>
+        <li>Panels can be dragged and resized.</li>
+      </ul>
+      <h2>Font Sliders</h2>
+      <ul>
+        <li>Font sliders are hidden by default. Use the toggle to show them.</li>
+      </ul>
+      <h2>Contact</h2>
+      <p>Developed by Darrel Raymond</p>
+    </div>
+  </div>
+</body>
+</html>

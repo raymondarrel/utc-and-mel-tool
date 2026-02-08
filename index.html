@@ -73,6 +73,35 @@
       text-shadow: 0 0 12px var(--glow);
     }
 
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .nav {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .nav a {
+      text-decoration: none;
+      color: var(--text);
+      border: 1px solid var(--input-border);
+      background: var(--panel-strong);
+      padding: 8px 12px;
+      border-radius: 10px;
+      font-size: 13px;
+    }
+
+    .nav a.active {
+      border-color: var(--accent);
+      color: var(--utc);
+      font-weight: 600;
+    }
+
     .workspace {
       background: var(--panel);
       border: 1px solid var(--panel-border);
@@ -368,7 +397,14 @@
 </head>
 <body data-theme="dark">
   <div class="frame">
-    <div class="title">MEL and UTC Tool</div>
+    <div class="topbar">
+      <div class="title">MEL and UTC Tool</div>
+      <div class="nav">
+        <a class="active" href="index.html">Home</a>
+        <a href="readme.html">Read-me</a>
+        <a href="fids.html">FIDS</a>
+      </div>
+    </div>
     <div id="workspace" class="workspace">
       <div class="panel" id="panel-timezones" data-x="18" data-y="18" data-w="520" data-h="320" data-font="18">
         <div class="panel-header">Time Zones</div>
