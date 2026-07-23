@@ -172,6 +172,25 @@
       color: var(--bad);
     }
 
+    .dev-warning {
+      border: 1px solid color-mix(in srgb, var(--bad), transparent 35%);
+      background: color-mix(in srgb, var(--bad), transparent 90%);
+      color: var(--bad);
+      border-radius: 10px;
+      padding: 11px 12px;
+      margin: 0 0 14px;
+      font-size: 14px;
+      font-weight: 700;
+      line-height: 1.35;
+    }
+
+    .dev-warning-label {
+      display: inline-block;
+      margin-right: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
     .board-toolbar {
       justify-content: space-between;
       flex-wrap: wrap;
@@ -433,6 +452,11 @@
           <div class="subtle">Q400 and A220 movements at BNE</div>
         </div>
         <div id="connectionStatus" class="status-pill warn">Proxy not set</div>
+      </div>
+
+      <div class="dev-warning" role="alert">
+        <span class="dev-warning-label">Warning</span>
+        This FIDS is in development mode and aircraft data will not be reliable. I am working on making this reliable.
       </div>
 
       <div class="settings">
