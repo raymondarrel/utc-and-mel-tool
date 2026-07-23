@@ -11,6 +11,9 @@ const BNE_LON = 153.1175;
 const DEFAULT_LIVE_RADIUS_NM = 250;
 const CACHE_SECONDS = 30 * 60;
 const AIRLABS_DETAIL_LIMIT = 12;
+const OPERATING_DAY_START_HOUR_BNE = 4;
+const BNE_UTC_OFFSET_HOURS = 10;
+const SHARED_LOG_SECONDS = 36 * 60 * 60;
 
 export default {
   async fetch(request, env, ctx) {
@@ -20,13 +23,19 @@ export default {
       return new Response(null, { headers: corsHeaders(request) });
     }
 
+    const cache = caches.default;
+
+    if (url.pathname === "/fids-log") {
+      return handleFidsLog(request, url, cache);
+    }
+
     if (url.pathname !== "/fids") {
       return json({ error: "Not found" }, 404, request);
     }
 
-    const cache = caches.default;
     const cacheKey = new Request(url.toString(), request);
-    const cached = await cache.match(cacheKey);
+    const useResponseCache = url.searchParams.get("sharedLog") !== "1";
+    const cached = useResponseCache ? await cache.match(cacheKey) : null;
     if (cached) return cached;
 
     try {
@@ -39,25 +48,56 @@ export default {
       };
 
       const source = selectSource(url.searchParams.get("source"), env);
-      const flights = await fetchFlightsForSource(source, url.searchParams, env, direction, filters);
+      const fetchedFlights = await fetchFlightsForSource(source, url.searchParams, env, direction, filters);
+      const flights = shouldUseSharedLog(url.searchParams, source)
+        ? await mergeSharedDailyFlights(cache, fetchedFlights, filters)
+        : fetchedFlights;
 
       const response = json({
         fetchedAt: new Date().toISOString(),
         source,
         limitations: sourceLimitations(source),
+        operatingDay: operatingDayKey(),
+        sharedLog: shouldUseSharedLog(url.searchParams, source),
         direction,
         data: flights
       }, 200, request, {
         "Cache-Control": `public, max-age=${CACHE_SECONDS}`
       });
 
-      ctx.waitUntil(cache.put(cacheKey, response.clone()));
+      if (useResponseCache) ctx.waitUntil(cache.put(cacheKey, response.clone()));
       return response;
     } catch (error) {
       return json({ error: error.message || "Unable to load FIDS data." }, 500, request);
     }
   }
 };
+
+async function handleFidsLog(request, url, cache) {
+  if (request.method !== "POST") {
+    return json({ error: "Method not allowed" }, 405, request);
+  }
+
+  const payload = await request.json().catch(() => ({}));
+  const filters = {
+    airportIata: cleanCode(url.searchParams.get("airport")) || DEFAULT_AIRPORT_IATA,
+    airportIcao: cleanCode(url.searchParams.get("airportIcao")) || DEFAULT_AIRPORT_ICAO,
+    operators: codeList(url.searchParams.get("operators"), DEFAULT_OPERATORS),
+    aircraft: codeList(url.searchParams.get("aircraft"), DEFAULT_AIRCRAFT)
+  };
+  const submittedFlights = Array.isArray(payload.data) ? payload.data.slice(0, 200) : [];
+  const data = await mergeSharedDailyFlights(cache, submittedFlights, filters);
+
+  return json({
+    fetchedAt: new Date().toISOString(),
+    operatingDay: operatingDayKey(),
+    sharedLog: true,
+    count: data.length,
+    data
+  }, 200, request, {
+    "Cache-Control": "no-store"
+  });
+}
 
 async function fetchFlightsForSource(source, params, env, direction, filters) {
   if (direction === "both") {
@@ -579,7 +619,8 @@ function mergeFlights(flights) {
   const byKey = new Map();
   for (const flight of flights) {
     const key = flightMergeKey(flight);
-    byKey.set(key, { ...byKey.get(key), ...flight });
+    const existing = byKey.get(key);
+    byKey.set(key, existing ? combineFlight(existing, flight) : flight);
   }
   return [...byKey.values()];
 }
@@ -588,13 +629,104 @@ function flightMergeKey(flight) {
   const reg = String(flight.reg || "").trim().toUpperCase();
   const type = String(flight.type || "").trim().toUpperCase();
   const movement = String(flight.movement || "").trim().toLowerCase();
-  const time = String(flight.board_time || flight.last_seen || flight.first_seen || "").slice(0, 16);
-  if (isKnownRegistration(reg)) return [movement, reg, type, time].join("|");
-  return [movement, flightNumber(flight.flight || flight.callsign), type, time].join("|");
+  const number = flightNumber(flight.flight || flight.callsign);
+  if (isKnownRegistration(reg)) return [movement, reg, type, number].join("|");
+  return [movement, number, type].join("|");
+}
+
+async function mergeSharedDailyFlights(cache, fetchedFlights, filters) {
+  const logRequest = new Request(`https://fids-worker-cache.local/daily/${filters.airportIata}/${operatingDayKey()}`);
+  const cached = await cache.match(logRequest);
+  const cachedPayload = cached ? await cached.json().catch(() => ({})) : {};
+  const cachedFlights = Array.isArray(cachedPayload.data) ? cachedPayload.data : [];
+  const dailyFlights = mergeFlights([...cachedFlights, ...fetchedFlights].map(normalizeSharedFlight))
+    .filter((flight) => isKnownRegistration(flight.reg))
+    .filter((flight) => isCurrentOperatingDay(flight))
+    .sort(byBoardTime);
+
+  await cache.put(logRequest, new Response(JSON.stringify({
+    fetchedAt: new Date().toISOString(),
+    operatingDay: operatingDayKey(),
+    data: dailyFlights
+  }), {
+    headers: {
+      "Content-Type": "application/json; charset=utf-8",
+      "Cache-Control": `public, max-age=${SHARED_LOG_SECONDS}`
+    }
+  }));
+
+  return dailyFlights;
+}
+
+function normalizeSharedFlight(flight) {
+  return {
+    ...flight,
+    flight: flight.flight || flight.callsign || "TBA",
+    callsign: flight.callsign || flight.flight || "",
+    type: flight.type || flight.aircraft || "TBA",
+    reg: String(flight.reg || flight.registration || "").trim().toUpperCase(),
+    board_time: flight.board_time || flight.time || flight.datetime_landed || flight.datetime_takeoff || flight.last_seen || flight.first_seen || "",
+    first_seen: flight.first_seen || flight.time || flight.board_time || "",
+    last_seen: flight.last_seen || flight.time || flight.board_time || "",
+    movement: flight.movement || "arrival"
+  };
+}
+
+function combineFlight(existing, next) {
+  return {
+    ...existing,
+    ...next,
+    board_time: earlierBoardTime(existing.board_time, next.board_time),
+    first_seen: earlierBoardTime(existing.first_seen, next.first_seen),
+    last_seen: laterBoardTime(existing.last_seen, next.last_seen),
+    flight_ended: existing.flight_ended === true ? true : next.flight_ended,
+    live_tracking: existing.live_tracking || next.live_tracking
+  };
+}
+
+function earlierBoardTime(a, b) {
+  const first = parseFlightTime(a);
+  const second = parseFlightTime(b);
+  if (Number.isNaN(first.getTime())) return b || "";
+  if (Number.isNaN(second.getTime())) return a || "";
+  return first <= second ? a : b;
+}
+
+function laterBoardTime(a, b) {
+  const first = parseFlightTime(a);
+  const second = parseFlightTime(b);
+  if (Number.isNaN(first.getTime())) return b || "";
+  if (Number.isNaN(second.getTime())) return a || "";
+  return first >= second ? a : b;
+}
+
+function shouldUseSharedLog(params, source) {
+  return source === "forecast" && params.get("sharedLog") !== "0";
+}
+
+function operatingDayKey(date = new Date()) {
+  const bneDate = new Date(date.getTime() + BNE_UTC_OFFSET_HOURS * 60 * 60 * 1000);
+  if (bneDate.getUTCHours() < OPERATING_DAY_START_HOUR_BNE) {
+    bneDate.setUTCDate(bneDate.getUTCDate() - 1);
+  }
+  return bneDate.toISOString().slice(0, 10);
+}
+
+function operatingDayStartUtc(dayKey = operatingDayKey()) {
+  const [year, month, day] = dayKey.split("-").map(Number);
+  return new Date(Date.UTC(year, month - 1, day, OPERATING_DAY_START_HOUR_BNE - BNE_UTC_OFFSET_HOURS, 0, 0));
+}
+
+function isCurrentOperatingDay(flight) {
+  const time = parseFlightTime(flight.board_time || flight.last_seen || flight.first_seen);
+  if (Number.isNaN(time.getTime())) return false;
+  const start = operatingDayStartUtc();
+  const end = new Date(start.getTime() + 24 * 60 * 60 * 1000);
+  return time >= start && time < end;
 }
 
 function byBoardTime(a, b) {
-  return Date.parse(a.board_time || "") - Date.parse(b.board_time || "");
+  return parseFlightTime(a.board_time || "") - parseFlightTime(b.board_time || "");
 }
 
 function normalizeDirection(value) {
@@ -665,6 +797,12 @@ function airLabsTime(value) {
     .replace(/Z$/, "");
 }
 
+function parseFlightTime(value) {
+  if (!value) return new Date(NaN);
+  const raw = String(value);
+  return new Date(raw.endsWith("Z") ? raw : `${raw}Z`);
+}
+
 function json(payload, status, request, extraHeaders = {}) {
   return new Response(JSON.stringify(payload), {
     status,
@@ -680,7 +818,7 @@ function corsHeaders(request) {
   const origin = request.headers.get("Origin") || "*";
   return {
     "Access-Control-Allow-Origin": origin,
-    "Access-Control-Allow-Methods": "GET, OPTIONS",
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type, Accept",
     "Vary": "Origin"
   };

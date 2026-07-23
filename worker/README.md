@@ -36,4 +36,4 @@ Defaults:
 - Operators: `QLK,NJS,SSQ,QFA`
 - Aircraft: `DH8D` for Q400, `BCS1` and `BCS3` for A220
 - Refresh/cache: 30 minutes
-- Current board: one row per aircraft registration, with arrivals and departures accumulated in browser storage for the Brisbane operating day from 04:00
+- Current board: one row per aircraft registration, with arrivals and departures accumulated in a Worker shared operating-day log and browser storage from 04:00 BNE

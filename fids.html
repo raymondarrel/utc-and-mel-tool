@@ -521,7 +521,7 @@
       liveRadiusNm: 250,
       lookBehindHours: 12,
       lookAheadHours: 18,
-      feedVersion: "airlabs-history-v8"
+      feedVersion: "airlabs-history-v10"
     };
 
     const state = {
@@ -846,6 +846,17 @@
       const base = effectiveProxyBase();
       if (!base) return "";
 
+      return `${base}/fids?${buildProxyParams().toString()}`;
+    }
+
+    function buildLogUrl() {
+      const base = effectiveProxyBase();
+      if (!base) return "";
+
+      return `${base}/fids-log?${buildProxyParams().toString()}`;
+    }
+
+    function buildProxyParams() {
       const params = new URLSearchParams({
         direction: "both",
         airport: CONFIG.airportIata,
@@ -853,6 +864,7 @@
         operators: CONFIG.operators.join(","),
         aircraft: CONFIG.aircraft.join(","),
         source: CONFIG.source,
+        sharedLog: "1",
         liveRadiusNm: String(CONFIG.liveRadiusNm),
         lookBehindHours: String(CONFIG.lookBehindHours),
         lookAheadHours: String(CONFIG.lookAheadHours),
@@ -860,7 +872,26 @@
         refreshBucket: String(Math.floor(Date.now() / CONFIG.refreshMs))
       });
 
-      return `${base}/fids?${params.toString()}`;
+      return params;
+    }
+
+    async function syncSharedDailyMovements(movements) {
+      const url = buildLogUrl();
+      if (!url || !movements.length) return null;
+
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Accept": "application/json",
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ data: movements })
+      });
+      if (!response.ok) return null;
+
+      const payload = await response.json().catch(() => ({}));
+      const rows = normalizeRows(payload);
+      return rows.length ? mergeDailyMovements(rows) : null;
     }
 
     async function loadFlights(manual = false) {
@@ -878,6 +909,7 @@
       setConnectionStatus("Loading", "");
 
       try {
+        await syncSharedDailyMovements(readDailyMovements());
         const response = await fetch(url, { headers: { "Accept": "application/json" } });
         const payload = await response.json().catch(() => ({}));
         if (!response.ok) {
@@ -886,6 +918,7 @@
 
         const rows = normalizeRows(payload);
         const movements = mergeDailyMovements(rows);
+        syncSharedDailyMovements(movements).catch(() => {});
         const aircraftRows = groupByAircraft(movements);
         renderAircraftRows(aircraftRows);
         setConnectionStatus("Connected", "ok");
