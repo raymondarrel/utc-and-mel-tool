@@ -497,7 +497,7 @@
       liveRadiusNm: 250,
       lookBehindHours: 12,
       lookAheadHours: 18,
-      feedVersion: "airlabs-history-v7"
+      feedVersion: "airlabs-history-v8"
     };
 
     const state = {
@@ -832,7 +832,8 @@
         liveRadiusNm: String(CONFIG.liveRadiusNm),
         lookBehindHours: String(CONFIG.lookBehindHours),
         lookAheadHours: String(CONFIG.lookAheadHours),
-        feedVersion: CONFIG.feedVersion
+        feedVersion: CONFIG.feedVersion,
+        refreshBucket: String(Math.floor(Date.now() / CONFIG.refreshMs))
       });
 
       return `${base}/fids?${params.toString()}`;
