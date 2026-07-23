@@ -19,6 +19,10 @@
       --shadow: rgba(12, 18, 30, 0.08);
       --input-border: #d6dbe3;
       --accent: #0b5bd3;
+      --accent-soft: rgba(11, 91, 211, 0.12);
+      --ok: #137333;
+      --warn: #9a5b00;
+      --bad: #b91c1c;
     }
 
     body[data-theme="dark"] {
@@ -33,6 +37,10 @@
       --shadow: rgba(0, 0, 0, 0.35);
       --input-border: rgba(255, 255, 255, 0.2);
       --accent: #78c8ff;
+      --accent-soft: rgba(120, 200, 255, 0.16);
+      --ok: #9be29f;
+      --warn: #ffd278;
+      --bad: #ff7878;
     }
 
     * {
@@ -51,14 +59,21 @@
 
     .frame {
       padding: 24px;
-      width: min(98vw, 1000px);
+      width: min(98vw, 1200px);
+    }
+
+    .topbar,
+    .board-head,
+    .status-row,
+    .board-toolbar,
+    .setting-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
     }
 
     .topbar {
-      display: flex;
-      align-items: center;
       justify-content: space-between;
-      gap: 12px;
       margin-bottom: 16px;
     }
 
@@ -100,16 +115,302 @@
       box-shadow: 0 12px 24px var(--shadow);
     }
 
-    p {
-      font-size: 14px;
+    .board-head {
+      justify-content: space-between;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
+    }
+
+    .board-title {
+      display: grid;
+      gap: 3px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 22px;
+      line-height: 1.1;
+    }
+
+    .subtle,
+    .status-text,
+    .empty-state,
+    label {
       color: var(--muted);
-      line-height: 1.5;
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    .status-row {
+      justify-content: space-between;
+      flex-wrap: wrap;
+      margin: 12px 0;
+    }
+
+    .status-pill {
+      border: 1px solid var(--input-border);
+      background: var(--panel-strong);
+      border-radius: 999px;
+      padding: 7px 10px;
+      font-size: 12px;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    .status-pill.ok {
+      border-color: color-mix(in srgb, var(--ok), transparent 55%);
+      color: var(--ok);
+    }
+
+    .status-pill.warn {
+      border-color: color-mix(in srgb, var(--warn), transparent 50%);
+      color: var(--warn);
+    }
+
+    .status-pill.bad {
+      border-color: color-mix(in srgb, var(--bad), transparent 50%);
+      color: var(--bad);
+    }
+
+    .board-toolbar {
+      justify-content: space-between;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+
+    .segmented {
+      display: inline-grid;
+      grid-template-columns: repeat(2, minmax(120px, 1fr));
+      border: 1px solid var(--input-border);
+      border-radius: 10px;
+      overflow: hidden;
+      background: var(--panel-strong);
+    }
+
+    .segmented button,
+    .btn {
+      border: 0;
+      background: transparent;
+      color: var(--text);
+      font: inherit;
+      font-size: 14px;
+      cursor: pointer;
+      min-height: 40px;
+    }
+
+    .segmented button {
+      padding: 9px 12px;
+      border-right: 1px solid var(--input-border);
+    }
+
+    .segmented button:last-child {
+      border-right: 0;
+    }
+
+    .segmented button.active {
+      color: var(--accent);
+      background: var(--accent-soft);
+      font-weight: 600;
+    }
+
+    .btn {
+      border: 1px solid var(--input-border);
+      background: var(--panel-strong);
+      border-radius: 10px;
+      padding: 9px 12px;
+    }
+
+    .btn:disabled {
+      cursor: progress;
+      opacity: 0.65;
+    }
+
+    .toolbar-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .settings {
+      display: grid;
+      gap: 8px;
+      grid-template-columns: minmax(180px, 1fr) auto auto;
+      align-items: end;
+      margin: 12px 0 16px;
+    }
+
+    .setting-field {
+      display: grid;
+      gap: 5px;
+    }
+
+    input {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid var(--input-border);
+      background: var(--panel-strong);
+      color: var(--text);
+      font: inherit;
+      font-size: 14px;
+      min-height: 40px;
+    }
+
+    .chips {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin: 6px 0 14px;
+    }
+
+    .chip {
+      border: 1px solid var(--input-border);
+      background: var(--panel-strong);
+      color: var(--muted);
+      border-radius: 999px;
+      padding: 6px 9px;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .table-wrap {
+      border: 1px solid var(--panel-border);
+      border-radius: 12px;
+      overflow: auto;
+      background: var(--panel-strong);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 780px;
+    }
+
+    th,
+    td {
+      padding: 11px 12px;
+      text-align: left;
+      border-bottom: 1px solid var(--panel-border);
+      font-size: 14px;
+      vertical-align: middle;
+    }
+
+    th {
+      color: var(--muted);
+      font-size: 11px;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      background: color-mix(in srgb, var(--panel-strong), var(--accent) 4%);
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+
+    tr:last-child td {
+      border-bottom: 0;
+    }
+
+    .flight-code {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--accent);
+      white-space: nowrap;
+    }
+
+    .aircraft-a220 {
+      color: #4fb8ff;
+    }
+
+    .aircraft-q400 {
+      color: #ff9f43;
+    }
+
+    .status-live {
+      color: var(--ok);
+      font-weight: 600;
+    }
+
+    .status-ended {
+      color: var(--muted);
+    }
+
+    .movement-list {
+      display: grid;
+      gap: 5px;
+      min-width: 190px;
+    }
+
+    .movement-line {
+      display: flex;
+      gap: 8px;
+      align-items: baseline;
+      white-space: nowrap;
+    }
+
+    .movement-time {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--ok);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .movement-flight {
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    .movement-empty {
+      color: var(--muted);
+    }
+
+    .empty-state {
+      padding: 22px 14px;
+      text-align: center;
+    }
+
+    .hidden {
+      display: none;
     }
 
     @media (max-width: 900px) {
+      body {
+        place-items: start stretch;
+      }
+
       .frame {
         width: 100%;
         padding: 16px;
+      }
+
+      .topbar,
+      .nav,
+      .settings {
+        align-items: stretch;
+      }
+
+      .topbar,
+      .settings {
+        display: grid;
+      }
+
+      .nav {
+        flex-wrap: wrap;
+      }
+
+      .settings {
+        grid-template-columns: 1fr;
+      }
+
+      .segmented {
+        width: 100%;
+      }
+
+      .btn,
+      input {
+        font-size: 16px;
+        min-height: 44px;
       }
     }
   </style>
@@ -126,8 +427,492 @@
     </div>
 
     <div class="card">
-      <p>Under construction.</p>
+      <div class="board-head">
+        <div class="board-title">
+          <h1>Brisbane QantasLink FIDS</h1>
+          <div class="subtle">Q400 and A220 movements at BNE</div>
+        </div>
+        <div id="connectionStatus" class="status-pill warn">Proxy not set</div>
+      </div>
+
+      <div class="settings">
+        <div class="setting-field">
+          <label for="proxyBase">Worker proxy URL</label>
+          <input id="proxyBase" type="url" inputmode="url" placeholder="https://your-worker.workers.dev" />
+        </div>
+        <button id="saveProxy" class="btn" type="button">Save</button>
+        <button id="clearProxy" class="btn" type="button">Clear</button>
+      </div>
+
+      <div class="chips">
+        <span class="chip">Airport BNE/YBBN</span>
+        <span class="chip">Operator QLK, NJS, SSQ, QFA</span>
+        <span class="chip">Aircraft DH8D, BCS1, BCS3</span>
+        <span class="chip">AirLabs forecast/history + live ADS-B</span>
+        <span class="chip">Daily log stored in browser</span>
+        <span class="chip">Refresh 30 min</span>
+      </div>
+
+      <div class="board-toolbar">
+        <div class="subtle" id="boardDate">Today</div>
+        <div class="toolbar-actions">
+          <button id="refreshBtn" class="btn" type="button">Refresh</button>
+          <button id="clearDayBtn" class="btn" type="button">Clear day</button>
+        </div>
+      </div>
+
+      <div class="status-row">
+        <div id="boardStatus" class="status-text">Waiting for proxy configuration.</div>
+        <div id="refreshStatus" class="status-pill">Next refresh --:--</div>
+      </div>
+
+      <div class="table-wrap">
+        <table aria-label="Brisbane QantasLink FIDS">
+          <thead>
+            <tr>
+              <th>Aircraft</th>
+              <th>Arrivals</th>
+              <th>Departures</th>
+              <th>Last Seen</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="flightRows"></tbody>
+        </table>
+        <div id="emptyState" class="empty-state">Add the deployed worker URL to load live flight data.</div>
+      </div>
     </div>
   </div>
+
+  <script>
+    const CONFIG = {
+      airportIata: "BNE",
+      airportIcao: "YBBN",
+      operators: ["QLK", "NJS", "SSQ", "QFA"],
+      aircraft: ["DH8D", "BCS1", "BCS3"],
+      source: "forecast",
+      defaultProxyBase: "https://bne-qantaslink-fids.raymond-fids.workers.dev",
+      refreshMs: 30 * 60 * 1000,
+      operatingDayStartHour: 4,
+      lookBehindHours: 12,
+      lookAheadHours: 18,
+      feedVersion: "airlabs-history-v6"
+    };
+
+    const state = {
+      timerId: null,
+      countdownId: null,
+      nextRefreshAt: null,
+      isLoading: false
+    };
+
+    const elements = {
+      proxyBase: document.getElementById("proxyBase"),
+      saveProxy: document.getElementById("saveProxy"),
+      clearProxy: document.getElementById("clearProxy"),
+      refreshBtn: document.getElementById("refreshBtn"),
+      clearDayBtn: document.getElementById("clearDayBtn"),
+      connectionStatus: document.getElementById("connectionStatus"),
+      boardStatus: document.getElementById("boardStatus"),
+      boardDate: document.getElementById("boardDate"),
+      refreshStatus: document.getElementById("refreshStatus"),
+      flightRows: document.getElementById("flightRows"),
+      emptyState: document.getElementById("emptyState")
+    };
+
+    function storedProxyBase() {
+      return localStorage.getItem("fidsProxyBase") || CONFIG.defaultProxyBase;
+    }
+
+    function effectiveProxyBase() {
+      return elements.proxyBase.value.trim().replace(/\/+$/, "");
+    }
+
+    function setConnectionStatus(text, mode) {
+      elements.connectionStatus.textContent = text;
+      elements.connectionStatus.className = `status-pill ${mode || ""}`.trim();
+    }
+
+    function asUtcDate(value) {
+      if (!value) return new Date(NaN);
+      return new Date(String(value).endsWith("Z") ? value : `${value}Z`);
+    }
+
+    function brisbaneParts(date = new Date()) {
+      const parts = new Intl.DateTimeFormat("en-AU", {
+        timeZone: "Australia/Brisbane",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false
+      }).formatToParts(date);
+      return Object.fromEntries(parts.map((part) => [part.type, part.value]));
+    }
+
+    function brisbaneDayKey(date = new Date()) {
+      const byType = brisbaneParts(date);
+      return `${byType.year}-${byType.month}-${byType.day}`;
+    }
+
+    function addDays(dayKey, days) {
+      const [year, month, day] = dayKey.split("-").map(Number);
+      const date = new Date(Date.UTC(year, month - 1, day + days, 0, 0, 0));
+      return date.toISOString().slice(0, 10);
+    }
+
+    function operationalDayKey(date = new Date()) {
+      const parts = brisbaneParts(date);
+      const dayKey = `${parts.year}-${parts.month}-${parts.day}`;
+      return Number(parts.hour) < CONFIG.operatingDayStartHour ? addDays(dayKey, -1) : dayKey;
+    }
+
+    function operationalDayStartUtc(dayKey = operationalDayKey()) {
+      const [year, month, day] = dayKey.split("-").map(Number);
+      return new Date(Date.UTC(year, month - 1, day, CONFIG.operatingDayStartHour - 10, 0, 0));
+    }
+
+    function operationalDayEndUtc(dayKey = operationalDayKey()) {
+      return new Date(operationalDayStartUtc(dayKey).getTime() + 24 * 60 * 60 * 1000);
+    }
+
+    function isCurrentOperationalDay(value) {
+      const date = asUtcDate(value);
+      if (Number.isNaN(date.getTime())) return false;
+      const dayKey = operationalDayKey();
+      return date >= operationalDayStartUtc(dayKey) && date < operationalDayEndUtc(dayKey);
+    }
+
+    function formatLocalTime(value) {
+      const date = asUtcDate(value);
+      if (Number.isNaN(date.getTime())) return "--:--";
+      return new Intl.DateTimeFormat("en-AU", {
+        timeZone: "Australia/Brisbane",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false
+      }).format(date);
+    }
+
+    function flightTime(flight) {
+      return flight.board_time || flight.datetime_landed || flight.datetime_takeoff || flight.last_seen || flight.first_seen;
+    }
+
+    function isLiveFlight(flight) {
+      return flight.live === true ||
+        flight.live_tracking === true ||
+        ((flight.flight_ended === false || flight.flight_ended === "false") && flight.scheduled !== true);
+    }
+
+    function normalizeRows(payload) {
+      const rows = Array.isArray(payload) ? payload : payload.data || payload.flights || [];
+      return rows
+        .filter((flight) => flight && (flight.type || flight.aircraft))
+        .filter((flight) => hasAircraftRegistration(aircraftRegistration(flight)))
+        .filter((flight) => isCurrentOperationalDay(flightTime(flight)))
+        .sort((a, b) => asUtcDate(flightTime(a)) - asUtcDate(flightTime(b)));
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? "").replace(/[&<>"']/g, (character) => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;"
+      }[character]));
+    }
+
+    function storageKey() {
+      return `fidsDailyMovements:${CONFIG.airportIata}:${operationalDayKey()}:start${CONFIG.operatingDayStartHour}`;
+    }
+
+    function readDailyMovements() {
+      try {
+        const movements = JSON.parse(localStorage.getItem(storageKey()) || "[]");
+        return Array.isArray(movements)
+          ? movements.filter((movement) => hasAircraftRegistration(movement.reg))
+          : [];
+      } catch {
+        return [];
+      }
+    }
+
+    function writeDailyMovements(movements) {
+      localStorage.setItem(storageKey(), JSON.stringify(movements));
+    }
+
+    function aircraftRegistration(flight) {
+      return String(flight.reg || flight.registration || "").trim().toUpperCase();
+    }
+
+    function hasAircraftRegistration(registration) {
+      const reg = String(registration || "").trim().toUpperCase();
+      return Boolean(reg && !["----", "TBA", "UNKNOWN", "N/A", "NA", "NULL"].includes(reg));
+    }
+
+    function movementKey(flight) {
+      const reg = aircraftRegistration(flight);
+      const time = String(flightTime(flight) || "").slice(0, 16);
+      if (hasAircraftRegistration(reg)) {
+        return [
+          flight.movement || "movement",
+          reg,
+          flight.type || flight.aircraft || "",
+          time
+        ].join("|");
+      }
+
+      return [
+        flight.movement || "movement",
+        String(flight.flight || flight.callsign || "").replace(/^[A-Z]+/i, "").replace(/\D/g, ""),
+        flight.type || flight.aircraft || ""
+      ].join("|");
+    }
+
+    function aircraftGroupKey(movement) {
+      const reg = movement.reg || "----";
+      const hasRegistration = reg !== "----" && reg !== "TBA";
+      return hasRegistration
+        ? `${reg}|${movement.type}`
+        : `${movement.flight}|${movement.movement}|${movement.type}`;
+    }
+
+    function mergeDailyMovements(flights) {
+      const existing = readDailyMovements();
+      const byKey = new Map(existing.map((movement) => [movementKey(movement), movement]));
+
+      for (const flight of flights) {
+        const reg = aircraftRegistration(flight);
+        if (!hasAircraftRegistration(reg)) continue;
+
+        const time = flightTime(flight);
+        const movement = {
+          key: movementKey(flight),
+          movement: flight.movement || "arrival",
+          time,
+          flight: flight.flight || flight.callsign || "TBA",
+          type: flight.type || flight.aircraft || "----",
+          reg,
+          operator: flight.operated_as || flight.operator || flight.painted_as || "----",
+          live: isLiveFlight(flight),
+          status: flight.status || flight.board_status || (isLiveFlight(flight) ? "live" : "seen today")
+        };
+
+        const existingMovement = byKey.get(movement.key);
+        if (!existingMovement || asUtcDate(movement.time) >= asUtcDate(existingMovement.time)) {
+          byKey.set(movement.key, movement);
+        }
+      }
+
+      const movements = [...byKey.values()]
+        .filter((movement) => hasAircraftRegistration(movement.reg))
+        .filter((movement) => isCurrentOperationalDay(movement.time))
+        .sort((a, b) => asUtcDate(a.time) - asUtcDate(b.time));
+      writeDailyMovements(movements);
+      return movements;
+    }
+
+    function groupByAircraft(movements) {
+      const aircraftMap = new Map();
+      for (const movement of movements) {
+        const key = aircraftGroupKey(movement);
+        if (!aircraftMap.has(key)) {
+          aircraftMap.set(key, {
+            reg: movement.reg,
+            type: movement.type,
+            operator: movement.operator,
+            arrivals: [],
+            departures: [],
+            lastSeen: movement.time,
+            firstSeen: movement.time,
+            live: false,
+            status: movement.status || "seen today"
+          });
+        }
+
+        const aircraft = aircraftMap.get(key);
+        const bucket = movement.movement === "departure" ? aircraft.departures : aircraft.arrivals;
+        bucket.push(movement);
+        if (asUtcDate(movement.time) > asUtcDate(aircraft.lastSeen)) {
+          aircraft.lastSeen = movement.time;
+          aircraft.status = movement.status || aircraft.status;
+        }
+        if (asUtcDate(movement.time) < asUtcDate(aircraft.firstSeen)) aircraft.firstSeen = movement.time;
+        aircraft.live = aircraft.live || movement.live;
+      }
+
+      return [...aircraftMap.values()]
+        .map((aircraft) => ({
+          ...aircraft,
+          arrivals: aircraft.arrivals.sort((a, b) => asUtcDate(a.time) - asUtcDate(b.time)),
+          departures: aircraft.departures.sort((a, b) => asUtcDate(a.time) - asUtcDate(b.time))
+        }))
+        .sort((a, b) => asUtcDate(a.firstSeen) - asUtcDate(b.firstSeen));
+    }
+
+    function aircraftClass(type) {
+      const aircraftType = String(type || "").toUpperCase();
+      if (["BCS1", "BCS3", "A221", "A223"].includes(aircraftType)) return "aircraft-a220";
+      if (aircraftType === "DH8D") return "aircraft-q400";
+      return "";
+    }
+
+    function renderMovementList(movements, type) {
+      if (!movements.length) return `<span class="movement-empty">--</span>`;
+      const colourClass = aircraftClass(type);
+      return `
+        <div class="movement-list">
+          ${movements.map((movement) => `
+            <div class="movement-line">
+              <span class="movement-time">${formatLocalTime(movement.time)}</span>
+              <span class="movement-flight">${escapeHtml(movement.flight)}</span>
+            </div>
+          `).join("")}
+        </div>
+      `;
+    }
+
+    function statusLabel(aircraft) {
+      if (aircraft.live) return "Live";
+      const status = String(aircraft.status || "seen today").replace(/_/g, " ");
+      return status.charAt(0).toUpperCase() + status.slice(1);
+    }
+
+    function renderAircraftRows(aircraftRows, emptyMessage) {
+      elements.flightRows.innerHTML = "";
+      elements.emptyState.classList.toggle("hidden", aircraftRows.length > 0);
+      elements.emptyState.textContent = aircraftRows.length ? "" : emptyMessage || "No registered Q400 or A220 QantasLink movements logged since 04:00 BNE.";
+
+      for (const aircraft of aircraftRows) {
+        const row = document.createElement("tr");
+        const colourClass = aircraftClass(aircraft.type);
+        row.innerHTML = `
+          <td><span class="flight-code ${colourClass}">${escapeHtml(aircraft.reg)}</span></td>
+          <td>${renderMovementList(aircraft.arrivals, aircraft.type)}</td>
+          <td>${renderMovementList(aircraft.departures, aircraft.type)}</td>
+          <td>${formatLocalTime(aircraft.lastSeen)}</td>
+          <td><span class="${aircraft.live ? "status-live" : "status-ended"}">${escapeHtml(statusLabel(aircraft))}</span></td>
+        `;
+        elements.flightRows.appendChild(row);
+      }
+    }
+
+    function buildFetchUrl() {
+      const base = effectiveProxyBase();
+      if (!base) return "";
+
+      const params = new URLSearchParams({
+        direction: "both",
+        airport: CONFIG.airportIata,
+        airportIcao: CONFIG.airportIcao,
+        operators: CONFIG.operators.join(","),
+        aircraft: CONFIG.aircraft.join(","),
+        source: CONFIG.source,
+        lookBehindHours: String(CONFIG.lookBehindHours),
+        lookAheadHours: String(CONFIG.lookAheadHours),
+        feedVersion: CONFIG.feedVersion
+      });
+
+      return `${base}/fids?${params.toString()}`;
+    }
+
+    async function loadFlights(manual = false) {
+      const url = buildFetchUrl();
+      if (!url) {
+        setConnectionStatus("Proxy not set", "warn");
+        elements.boardStatus.textContent = "Waiting for proxy configuration.";
+        renderAircraftRows(groupByAircraft(readDailyMovements()), "Add the deployed worker URL to load live flight data.");
+        return;
+      }
+
+      state.isLoading = true;
+      elements.refreshBtn.disabled = true;
+      elements.boardStatus.textContent = manual ? "Refreshing flight data..." : "Loading flight data...";
+      setConnectionStatus("Loading", "");
+
+      try {
+        const response = await fetch(url, { headers: { "Accept": "application/json" } });
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          throw new Error(payload.error || `Proxy returned ${response.status}`);
+        }
+
+        const rows = normalizeRows(payload);
+        const movements = mergeDailyMovements(rows);
+        const aircraftRows = groupByAircraft(movements);
+        renderAircraftRows(aircraftRows);
+        setConnectionStatus("Connected", "ok");
+        const fetchedAt = payload.fetchedAt ? formatLocalTime(payload.fetchedAt) : formatLocalTime(new Date().toISOString());
+        const sourceLabel = payload.source === "forecast" ? "AirLabs forecast/history + Airplanes.live" : payload.source === "airlabs" ? "AirLabs schedule forecast" : payload.source === "airplanes" ? "Airplanes.live free test feed" : payload.source === "opensky" ? "OpenSky free test feed" : "FR24";
+        elements.boardStatus.textContent = `${movements.length} registered-aircraft movements for ${aircraftRows.length} aircraft since 04:00 BNE. Last update ${fetchedAt} BNE from ${sourceLabel}.`;
+        scheduleRefresh();
+      } catch (error) {
+        setConnectionStatus("Error", "bad");
+        elements.boardStatus.textContent = error.message;
+        renderAircraftRows(groupByAircraft(readDailyMovements()), "Unable to load live flight data from the configured proxy.");
+      } finally {
+        state.isLoading = false;
+        elements.refreshBtn.disabled = false;
+      }
+    }
+
+    function scheduleRefresh() {
+      clearTimeout(state.timerId);
+      state.nextRefreshAt = Date.now() + CONFIG.refreshMs;
+      state.timerId = setTimeout(() => loadFlights(false), CONFIG.refreshMs);
+      updateCountdown();
+    }
+
+    function updateCountdown() {
+      clearInterval(state.countdownId);
+      const tick = () => {
+        if (!state.nextRefreshAt) {
+          elements.refreshStatus.textContent = "Next refresh --:--";
+          return;
+        }
+        const remaining = Math.max(0, state.nextRefreshAt - Date.now());
+        const minutes = Math.floor(remaining / 60000);
+        const seconds = Math.floor((remaining % 60000) / 1000);
+        elements.refreshStatus.textContent = `Next refresh ${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+      };
+      tick();
+      state.countdownId = setInterval(tick, 1000);
+    }
+
+    elements.saveProxy.addEventListener("click", () => {
+      const base = effectiveProxyBase();
+      if (base) {
+        localStorage.setItem("fidsProxyBase", base);
+        elements.proxyBase.value = base;
+      }
+      loadFlights(true);
+    });
+
+    elements.clearProxy.addEventListener("click", () => {
+      localStorage.removeItem("fidsProxyBase");
+      elements.proxyBase.value = "";
+      clearTimeout(state.timerId);
+      state.nextRefreshAt = null;
+      updateCountdown();
+      renderAircraftRows(groupByAircraft(readDailyMovements()), "Add the deployed worker URL to load live flight data.");
+      setConnectionStatus("Proxy not set", "warn");
+      elements.boardStatus.textContent = "Waiting for proxy configuration.";
+    });
+
+    elements.clearDayBtn.addEventListener("click", () => {
+      localStorage.removeItem(storageKey());
+      renderAircraftRows([], "No registered Q400 or A220 QantasLink movements logged since 04:00 BNE.");
+      elements.boardStatus.textContent = "The current 04:00 BNE operating-day log has been cleared.";
+    });
+
+    elements.refreshBtn.addEventListener("click", () => loadFlights(true));
+
+    elements.proxyBase.value = storedProxyBase();
+    elements.boardDate.textContent = `Brisbane operating day ${operationalDayKey()} from 04:00`;
+    renderAircraftRows(groupByAircraft(readDailyMovements()));
+    loadFlights(false);
+  </script>
 </body>
 </html>
