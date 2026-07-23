@@ -494,9 +494,10 @@
       defaultProxyBase: "https://bne-qantaslink-fids.raymond-fids.workers.dev",
       refreshMs: 30 * 60 * 1000,
       operatingDayStartHour: 4,
+      liveRadiusNm: 250,
       lookBehindHours: 12,
       lookAheadHours: 18,
-      feedVersion: "airlabs-history-v6"
+      feedVersion: "airlabs-history-v7"
     };
 
     const state = {
@@ -828,6 +829,7 @@
         operators: CONFIG.operators.join(","),
         aircraft: CONFIG.aircraft.join(","),
         source: CONFIG.source,
+        liveRadiusNm: String(CONFIG.liveRadiusNm),
         lookBehindHours: String(CONFIG.lookBehindHours),
         lookAheadHours: String(CONFIG.lookAheadHours),
         feedVersion: CONFIG.feedVersion

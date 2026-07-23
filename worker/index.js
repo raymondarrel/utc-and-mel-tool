@@ -8,6 +8,7 @@ const DEFAULT_AIRPORT_IATA = "BNE";
 const DEFAULT_AIRPORT_ICAO = "YBBN";
 const BNE_LAT = -27.3842;
 const BNE_LON = 153.1175;
+const DEFAULT_LIVE_RADIUS_NM = 250;
 const CACHE_SECONDS = 30 * 60;
 const AIRLABS_DETAIL_LIMIT = 12;
 
@@ -69,13 +70,13 @@ async function fetchFlightsForSource(source, params, env, direction, filters) {
   if (source === "airlabs") return fetchAirLabsSchedules(params, env, direction, filters);
   if (source === "fr24") return fetchFr24Flights(params, env, direction, filters);
   if (source === "opensky") return fetchOpenSkyFlights(params, direction, filters);
-  return fetchAirplanesLiveFlights(direction, filters);
+  return fetchAirplanesLiveFlights(params, direction, filters);
 }
 
 async function fetchForecastFlights(params, env, direction, filters) {
   const scheduled = await fetchAirLabsSchedules(params, env, direction, filters);
   const tracked = await fetchAirLabsTrackedFlights(params, env, direction, filters);
-  const live = await fetchAirplanesLiveFlights(direction, filters);
+  const live = await fetchAirplanesLiveFlights(params, direction, filters);
   const typeTracked = await fetchAirplanesTypeFlights(filters);
   const enrichedScheduled = enrichSchedulesWithTypeTracked(scheduled, typeTracked, filters);
   return mergeFlights([...enrichedScheduled, ...tracked, ...live]).sort(byBoardTime);
@@ -107,8 +108,9 @@ async function fetchFr24Flights(params, env, direction, filters) {
     .sort(byBoardTime);
 }
 
-async function fetchAirplanesLiveFlights(direction, filters) {
-  const response = await fetch(`${AIRPLANES_LIVE_BASE_URL}/point/${BNE_LAT}/${BNE_LON}/120`, {
+async function fetchAirplanesLiveFlights(params, direction, filters) {
+  const radiusNm = clampNumber(params.get("liveRadiusNm"), 20, 250, DEFAULT_LIVE_RADIUS_NM);
+  const response = await fetch(`${AIRPLANES_LIVE_BASE_URL}/point/${BNE_LAT}/${BNE_LON}/${radiusNm}`, {
     headers: { "Accept": "application/json" }
   });
 
@@ -546,9 +548,9 @@ function matchesOperator(flight, operators) {
 
 function matchesLiveDirection(flight, direction) {
   if (direction === "arrivals") {
-    return flight.vertical_rate_fpm < -150;
+    return flight.vertical_rate_fpm <= 0;
   }
-  return flight.vertical_rate_fpm > 150;
+  return flight.vertical_rate_fpm > 0;
 }
 
 function selectSource(value, env) {
