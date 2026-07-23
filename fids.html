@@ -654,21 +654,25 @@
 
     function movementKey(flight) {
       const reg = aircraftRegistration(flight);
-      const time = String(flightTime(flight) || "").slice(0, 16);
+      const number = flightNumber(flight.flight || flight.callsign);
       if (hasAircraftRegistration(reg)) {
         return [
           flight.movement || "movement",
           reg,
           flight.type || flight.aircraft || "",
-          time
+          number
         ].join("|");
       }
 
       return [
         flight.movement || "movement",
-        String(flight.flight || flight.callsign || "").replace(/^[A-Z]+/i, "").replace(/\D/g, ""),
+        number,
         flight.type || flight.aircraft || ""
       ].join("|");
+    }
+
+    function flightNumber(value) {
+      return String(value || "").replace(/^[A-Z]+/i, "").replace(/\D/g, "");
     }
 
     function aircraftGroupKey(movement) {
@@ -701,8 +705,16 @@
         };
 
         const existingMovement = byKey.get(movement.key);
-        if (!existingMovement || asUtcDate(movement.time) >= asUtcDate(existingMovement.time)) {
+        if (!existingMovement) {
           byKey.set(movement.key, movement);
+        } else {
+          byKey.set(movement.key, {
+            ...existingMovement,
+            ...movement,
+            time: earlierTime(existingMovement.time, movement.time),
+            live: existingMovement.live || movement.live,
+            status: movement.status || existingMovement.status
+          });
         }
       }
 
@@ -712,6 +724,12 @@
         .sort((a, b) => asUtcDate(a.time) - asUtcDate(b.time));
       writeDailyMovements(movements);
       return movements;
+    }
+
+    function earlierTime(a, b) {
+      if (Number.isNaN(asUtcDate(a).getTime())) return b;
+      if (Number.isNaN(asUtcDate(b).getTime())) return a;
+      return asUtcDate(a) <= asUtcDate(b) ? a : b;
     }
 
     function groupByAircraft(movements) {
