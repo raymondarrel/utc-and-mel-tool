@@ -2,7 +2,7 @@
 
 This Cloudflare Worker keeps flight API keys out of `fids.html`.
 
-The page currently defaults to `source=forecast`, which combines AirLabs airport schedules, AirLabs registered live/recent flights, and Airplanes.live's free public live aircraft endpoint near Brisbane. AirLabs historical lookup is flight-number based, so airport-wide day history comes from available schedule/live rows plus the saved operating-day log.
+The page currently defaults to `source=forecast`, which combines AirLabs airport schedules, AirLabs registered live/recent flights, Airplanes.live's free public live aircraft endpoint near Brisbane, and a shared Cloudflare KV operating-day log. AirLabs historical lookup is flight-number based, so airport-wide day history comes from available schedule/live rows plus the saved operating-day log.
 
 ## Deploy
 
@@ -10,6 +10,7 @@ The page currently defaults to `source=forecast`, which combines AirLabs airport
 npm install -g wrangler
 wrangler login
 cd worker
+wrangler kv namespace create FIDS_STORE
 wrangler secret put AIRLABS_API_KEY
 wrangler deploy
 ```
@@ -36,4 +37,4 @@ Defaults:
 - Operators: `QLK,NJS,SSQ,QFA`
 - Aircraft: `DH8D` for Q400, `BCS1` and `BCS3` for A220
 - Refresh/cache: 30 minutes
-- Current board: one row per aircraft registration, with arrivals and departures accumulated in a Worker shared operating-day log and browser storage from 04:00 BNE
+- Current board: one row per aircraft registration, with arrivals and departures accumulated in Cloudflare KV for the shared 04:00 BNE operating-day log

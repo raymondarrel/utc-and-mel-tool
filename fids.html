@@ -473,7 +473,7 @@
         <span class="chip">Operator QLK, NJS, SSQ, QFA</span>
         <span class="chip">Aircraft DH8D, BCS1, BCS3</span>
         <span class="chip">AirLabs forecast/history + live ADS-B</span>
-        <span class="chip">Daily log stored in browser</span>
+        <span class="chip">Shared day log stored in Cloudflare KV</span>
         <span class="chip">Refresh 30 min</span>
       </div>
 
@@ -528,7 +528,8 @@
       timerId: null,
       countdownId: null,
       nextRefreshAt: null,
-      isLoading: false
+      isLoading: false,
+      dailyMovements: []
     };
 
     const elements = {
@@ -654,6 +655,10 @@
     }
 
     function readDailyMovements() {
+      return state.dailyMovements;
+    }
+
+    function readStoredDailyMovements() {
       try {
         const movements = JSON.parse(localStorage.getItem(storageKey()) || "[]");
         return Array.isArray(movements)
@@ -665,7 +670,11 @@
     }
 
     function writeDailyMovements(movements) {
-      localStorage.setItem(storageKey(), JSON.stringify(movements));
+      state.dailyMovements = movements;
+    }
+
+    function clearStoredDailyMovements() {
+      localStorage.removeItem(storageKey());
     }
 
     function aircraftRegistration(flight) {
@@ -909,7 +918,11 @@
       setConnectionStatus("Loading", "");
 
       try {
-        await syncSharedDailyMovements(readDailyMovements());
+        const storedMovements = readStoredDailyMovements();
+        if (storedMovements.length) {
+          await syncSharedDailyMovements(storedMovements);
+          clearStoredDailyMovements();
+        }
         const response = await fetch(url, { headers: { "Accept": "application/json" } });
         const payload = await response.json().catch(() => ({}));
         if (!response.ok) {
@@ -980,9 +993,10 @@
     });
 
     elements.clearDayBtn.addEventListener("click", () => {
-      localStorage.removeItem(storageKey());
+      clearStoredDailyMovements();
+      state.dailyMovements = [];
       renderAircraftRows([], "No registered Q400 or A220 QantasLink movements logged since 04:00 BNE.");
-      elements.boardStatus.textContent = "The current 04:00 BNE operating-day log has been cleared.";
+      elements.boardStatus.textContent = "The local view has been cleared. The shared operating-day log will reload on the next refresh.";
     });
 
     elements.refreshBtn.addEventListener("click", () => loadFlights(true));

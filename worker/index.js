@@ -14,6 +14,7 @@ const AIRLABS_DETAIL_LIMIT = 12;
 const OPERATING_DAY_START_HOUR_BNE = 4;
 const BNE_UTC_OFFSET_HOURS = 10;
 const SHARED_LOG_SECONDS = 36 * 60 * 60;
+const SHARED_LOG_TTL_SECONDS = 3 * 24 * 60 * 60;
 
 export default {
   async fetch(request, env, ctx) {
@@ -26,7 +27,7 @@ export default {
     const cache = caches.default;
 
     if (url.pathname === "/fids-log") {
-      return handleFidsLog(request, url, cache);
+      return handleFidsLog(request, url, env, cache);
     }
 
     if (url.pathname !== "/fids") {
@@ -50,7 +51,7 @@ export default {
       const source = selectSource(url.searchParams.get("source"), env);
       const fetchedFlights = await fetchFlightsForSource(source, url.searchParams, env, direction, filters);
       const flights = shouldUseSharedLog(url.searchParams, source)
-        ? await mergeSharedDailyFlights(cache, fetchedFlights, filters)
+        ? await mergeSharedDailyFlights(env, cache, fetchedFlights, filters)
         : fetchedFlights;
 
       const response = json({
@@ -73,7 +74,7 @@ export default {
   }
 };
 
-async function handleFidsLog(request, url, cache) {
+async function handleFidsLog(request, url, env, cache) {
   if (request.method !== "POST") {
     return json({ error: "Method not allowed" }, 405, request);
   }
@@ -86,7 +87,7 @@ async function handleFidsLog(request, url, cache) {
     aircraft: codeList(url.searchParams.get("aircraft"), DEFAULT_AIRCRAFT)
   };
   const submittedFlights = Array.isArray(payload.data) ? payload.data.slice(0, 200) : [];
-  const data = await mergeSharedDailyFlights(cache, submittedFlights, filters);
+  const data = await mergeSharedDailyFlights(env, cache, submittedFlights, filters);
 
   return json({
     fetchedAt: new Date().toISOString(),
@@ -634,28 +635,54 @@ function flightMergeKey(flight) {
   return [movement, number, type].join("|");
 }
 
-async function mergeSharedDailyFlights(cache, fetchedFlights, filters) {
-  const logRequest = new Request(`https://fids-worker-cache.local/daily/${filters.airportIata}/${operatingDayKey()}`);
-  const cached = await cache.match(logRequest);
-  const cachedPayload = cached ? await cached.json().catch(() => ({})) : {};
-  const cachedFlights = Array.isArray(cachedPayload.data) ? cachedPayload.data : [];
+async function mergeSharedDailyFlights(env, cache, fetchedFlights, filters) {
+  const logKey = sharedLogKey(filters);
+  const cachedFlights = await readSharedFlights(env, cache, logKey);
   const dailyFlights = mergeFlights([...cachedFlights, ...fetchedFlights].map(normalizeSharedFlight))
     .filter((flight) => isKnownRegistration(flight.reg))
     .filter((flight) => isCurrentOperatingDay(flight))
     .sort(byBoardTime);
 
-  await cache.put(logRequest, new Response(JSON.stringify({
+  await writeSharedFlights(env, cache, logKey, {
     fetchedAt: new Date().toISOString(),
     operatingDay: operatingDayKey(),
     data: dailyFlights
-  }), {
+  });
+
+  return dailyFlights;
+}
+
+async function readSharedFlights(env, cache, logKey) {
+  if (env.FIDS_STORE) {
+    const stored = await env.FIDS_STORE.get(logKey, "json");
+    return Array.isArray(stored?.data) ? stored.data : [];
+  }
+
+  const logRequest = new Request(`https://fids-worker-cache.local/${logKey}`);
+  const cached = await cache.match(logRequest);
+  const cachedPayload = cached ? await cached.json().catch(() => ({})) : {};
+  return Array.isArray(cachedPayload.data) ? cachedPayload.data : [];
+}
+
+async function writeSharedFlights(env, cache, logKey, payload) {
+  if (env.FIDS_STORE) {
+    await env.FIDS_STORE.put(logKey, JSON.stringify(payload), {
+      expirationTtl: SHARED_LOG_TTL_SECONDS
+    });
+    return;
+  }
+
+  const logRequest = new Request(`https://fids-worker-cache.local/${logKey}`);
+  await cache.put(logRequest, new Response(JSON.stringify(payload), {
     headers: {
       "Content-Type": "application/json; charset=utf-8",
       "Cache-Control": `public, max-age=${SHARED_LOG_SECONDS}`
     }
   }));
+}
 
-  return dailyFlights;
+function sharedLogKey(filters) {
+  return `daily:${filters.airportIata}:${operatingDayKey()}`;
 }
 
 function normalizeSharedFlight(flight) {
